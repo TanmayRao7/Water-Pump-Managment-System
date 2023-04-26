@@ -49,6 +49,12 @@ public class MainActivity extends AppCompatActivity {
 
     ImageButton refresh ;
 
+    ArrayAdapter<PumpData> arrayAdapter;
+
+    SimpleDateFormat sdf;
+
+    TextView water_state;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,53 +69,30 @@ public class MainActivity extends AppCompatActivity {
         //Stop Button
         stopButton = findViewById(R.id.button_stop);
         // Water Status Textview
-        TextView water_state = (TextView) findViewById(R.id.waterStatus);
+        water_state = (TextView) findViewById(R.id.waterStatus);
         // Time status TextView
         last_updated_time =  findViewById(R.id.timeTextView);
         // Listview , Array Adapter
         status_list = findViewById(R.id.status_listview);
-        ArrayAdapter<PumpData> arrayAdapter = new ArrayAdapter<>( getApplicationContext(),android.R.layout.simple_list_item_1, waterPumpDataList);
+        //ArrayAdapter<PumpData> arrayAdapter = new ArrayAdapter<>( getApplicationContext(),android.R.layout.simple_list_item_1, waterPumpDataList);
+        arrayAdapter = new ArrayAdapter<>( getApplicationContext(),android.R.layout.simple_list_item_1, waterPumpDataList);
         status_list.setAdapter(arrayAdapter);
         // Logo Textview
         textView = findViewById(R.id.textView);
 
         // Formatted Time
-        SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.getDefault());
-
-        //Button to enable or disable start and stop .
-        if(water_state.getText().toString().trim().toLowerCase().equals("online")){
-            startButton.setEnabled(false);
-        }else{
-            stopButton.setEnabled(false);
-        }
+        sdf = new SimpleDateFormat("h:mm a", Locale.getDefault());
 
         // Retrofit Initialization
         retrofit = new Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(GsonConverterFactory.create()).build();
         retrofitInterface = retrofit.create(RetrofitInterface.class);
 
+        refresh();
+
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Call<List<PumpData>> call = retrofitInterface.getPumpData();
-                call.enqueue(new Callback<List<PumpData>>() {
-                    @Override
-                    public void onResponse(Call<List<PumpData>> call, Response<List<PumpData>> response) {
-                        if(response.code() == 200){
-                            //Toast.makeText(MainActivity.this, "", Toast.LENGTH_SHORT).show();
-                            waterPumpDataList.clear();
-                            List<PumpData> pumpDataList = response.body(); // get the list from the response
-                            arrayAdapter.addAll(pumpDataList); // add all elements to the adapter
-                            arrayAdapter.notifyDataSetChanged();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<PumpData>> call, Throwable t) {
-
-                        Toast.makeText(MainActivity.this, "Server Error", Toast.LENGTH_SHORT).show();
-
-                    }
-                });
+                refresh();
             }
         });
 
@@ -117,69 +100,99 @@ public class MainActivity extends AppCompatActivity {
         stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int min = 50;
-                int max = 100;
-                int random_water_level = random.nextInt(max-min+1)+min;
-                int random_energy_level = random.nextInt(max-min+1)+min;
-                PumpData data = new PumpData("Offline", random_water_level, random_energy_level);
-                Call<PumpData> call = retrofitInterface.addData(data);
-                call.enqueue(new Callback<PumpData>() {
-                    @Override
-                    public void onResponse(Call<PumpData> call, Response<PumpData> response) {
-
-                        Toast.makeText(MainActivity.this, "Water Pump has been stopped", Toast.LENGTH_SHORT).show();
-                        water_level_progress_bar.setProgress(random_water_level);
-                        energy_level_progress_bar.setProgress(random_energy_level);
-                        String currentDateAndTime = sdf.format(new Date());
-                        last_updated_time.setText(currentDateAndTime);
-                        water_state.setText("Offline");
-                        water_state.setTextColor(Color.RED);
-                        startButton.setEnabled(true);
-                        stopButton.setEnabled(false);
-
-                    }
-
-                    @Override
-                    public void onFailure(Call<PumpData> call, Throwable t) {
-                        Toast.makeText(MainActivity.this, "Sever Error", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                stop();
+                refresh();
             }
         });
 
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int min = 50;
-                int max = 100;
-                int random_water_level = random.nextInt(max-min+1)+min;
-                int random_energy_level = random.nextInt(max-min+1)+min;
-                PumpData data = new PumpData("Online", random_water_level, random_energy_level);
-                Call<PumpData> call = retrofitInterface.addData(data);
-                call.enqueue(new Callback<PumpData>() {
-                    @Override
-                    public void onResponse(Call<PumpData> call, Response<PumpData> response) {
-                        Toast.makeText(MainActivity.this, "Water Pump has been started", Toast.LENGTH_SHORT).show();
-                        water_level_progress_bar.setProgress(random_water_level);
-                        energy_level_progress_bar.setProgress(random_energy_level);
-                        String currentDateAndTime = sdf.format(new Date());
-                        last_updated_time.setText(currentDateAndTime);
-                        water_state.setText("Online");
-                        water_state.setTextColor(Color.parseColor("#7CB342"));
-                        startButton.setEnabled(false);
-                        stopButton.setEnabled(true);
-                    }
-
-                    @Override
-                    public void onFailure(Call<PumpData> call, Throwable t) {
-
-                        Toast.makeText(MainActivity.this, "Server Error", Toast.LENGTH_SHORT).show();
-
-                    }
-                });
+                start();
+                refresh();
             }
         });
 
+    }
+
+    public void refresh(){
+        Call<List<PumpData>> call = retrofitInterface.getPumpData();
+        call.enqueue(new Callback<List<PumpData>>() {
+            @Override
+            public void onResponse(Call<List<PumpData>> call, Response<List<PumpData>> response) {
+                if(response.code() == 200){
+                    waterPumpDataList.clear();
+                    List<PumpData> pumpDataList = response.body(); // get the list from the response
+                    arrayAdapter.addAll(pumpDataList); // add all elements to the adapter
+                    arrayAdapter.notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<PumpData>> call, Throwable t) {
+
+                Toast.makeText(MainActivity.this, "Server Error", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+    }
+    public void start(){
+
+        int min = 50;
+        int max = 100;
+        int random_water_level = random.nextInt(max-min+1)+min;
+        int random_energy_level = random.nextInt(max-min+1)+min;
+        PumpData data = new PumpData("Online", random_water_level, random_energy_level);
+        Call<PumpData> call = retrofitInterface.addData(data);
+        call.enqueue(new Callback<PumpData>() {
+            @Override
+            public void onResponse(Call<PumpData> call, Response<PumpData> response) {
+                Toast.makeText(MainActivity.this, "Water Pump has been started", Toast.LENGTH_SHORT).show();
+                water_level_progress_bar.setProgress(random_water_level);
+                energy_level_progress_bar.setProgress(random_energy_level);
+                String currentDateAndTime = sdf.format(new Date());
+                last_updated_time.setText(currentDateAndTime);
+                water_state.setText("Online");
+                water_state.setTextColor(Color.parseColor("#7CB342"));
+                startButton.setEnabled(false);
+                stopButton.setEnabled(true);
+            }
+
+            @Override
+            public void onFailure(Call<PumpData> call, Throwable t) {
+
+                Toast.makeText(MainActivity.this, "Server Error", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
+    }
+    public void stop(){
+        int min = 50;
+        int max = 100;
+        int random_water_level = random.nextInt(max-min+1)+min;
+        int random_energy_level = random.nextInt(max-min+1)+min;
+        PumpData data = new PumpData("Offline", random_water_level, random_energy_level);
+        Call<PumpData> call = retrofitInterface.addData(data);
+        call.enqueue(new Callback<PumpData>() {
+            @Override
+            public void onResponse(Call<PumpData> call, Response<PumpData> response) {
+
+                Toast.makeText(MainActivity.this, "Water Pump has been stopped", Toast.LENGTH_SHORT).show();
+                water_level_progress_bar.setProgress(random_water_level);
+                energy_level_progress_bar.setProgress(random_energy_level);
+                String currentDateAndTime = sdf.format(new Date());
+                last_updated_time.setText(currentDateAndTime);
+                water_state.setText("Offline");
+                water_state.setTextColor(Color.RED);
+                startButton.setEnabled(true);
+                stopButton.setEnabled(false);
+            }
+            @Override
+            public void onFailure(Call<PumpData> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Sever Error", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 
