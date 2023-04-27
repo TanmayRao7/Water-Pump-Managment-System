@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -13,13 +14,13 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.material.snackbar.Snackbar;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 
 import retrofit2.Call;
@@ -87,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
         retrofit = new Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(GsonConverterFactory.create()).build();
         retrofitInterface = retrofit.create(RetrofitInterface.class);
 
+        updateStatus();
         refresh();
 
         refresh.setOnClickListener(new View.OnClickListener() {
@@ -101,7 +103,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 stop();
-                refresh();
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        refresh();
+                    }
+                },5000);
+
             }
         });
 
@@ -109,7 +118,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 start();
-                refresh();
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        refresh();
+                    }
+                },5000);
             }
         });
 
@@ -193,6 +208,45 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Sever Error", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    public void updateStatus(){
+
+        Call<List<PumpData>> call = retrofitInterface.getPumpData();
+
+        call.enqueue(new Callback<List<PumpData>>() {
+            @Override
+            public void onResponse(Call<List<PumpData>> call, Response<List<PumpData>> response) {
+                if(response.code() == 200){
+                    List<PumpData> list = response.body();
+                    PumpData pumpData = list.get(0);
+                    String datetime = pumpData.getTime();
+                    String Status = pumpData.getPumpStatus();
+                    int water_level = pumpData.getWaterLevel();
+                    int energy_level = pumpData.getEnergyLevel();
+                    water_level_progress_bar.setProgress(water_level);
+                    energy_level_progress_bar.setProgress(energy_level);
+                    last_updated_time.setText(datetime);
+                    if(Status.equals("Offline")){
+                        water_state.setText("Offline");
+                        water_state.setTextColor(Color.RED);
+                        stopButton.setEnabled(false);
+                        startButton.setEnabled(true);
+                    }else if(Status.equals("Online")){
+                        water_state.setText("Online");
+                        water_state.setTextColor(Color.parseColor("#7CB342"));
+                        stopButton.setEnabled(true);
+                        startButton.setEnabled(false);
+                    }
+                }
+
+            }
+            @Override
+            public void onFailure(Call<List<PumpData>> call, Throwable t) {
+
+            }
+        });
+
     }
 
 

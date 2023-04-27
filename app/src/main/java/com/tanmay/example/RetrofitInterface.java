@@ -20,4 +20,7 @@ public interface RetrofitInterface {
     @POST("/water-pump-post")
     Call<PumpData> addData(@Body PumpData data);
 
+    @GET("/water-pump-last")
+    Call<PumpData> getData();
+
 }

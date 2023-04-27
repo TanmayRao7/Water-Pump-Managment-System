@@ -55,7 +55,8 @@
                 android:gravity="center"
                 android:text="Online"
                 android:textColor="#7CB342"
-                android:textSize="20sp" />
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/timeTextView"
@@ -65,7 +66,8 @@
                 android:gravity="center"
                 android:text="Last Updated: 10:30 PM"
                 android:textColor="#0072C6"
-                android:textSize="20sp" />
+                android:textSize="20sp"
+                android:textStyle="bold" />
         </LinearLayout>
 
 

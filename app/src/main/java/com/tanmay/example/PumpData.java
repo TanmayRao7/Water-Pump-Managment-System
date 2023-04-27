@@ -4,14 +4,6 @@ import androidx.annotation.NonNull;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.Locale;
-
 public class PumpData {
     @SerializedName("id")
     private int id;
@@ -52,6 +44,10 @@ public class PumpData {
         this.pumpStatus = pumpStatus;
         this.waterLevel = waterLevel;
         this.energyLevel = energyLevel;
+    }
+
+    public String getData(){
+        return "Time: "+time+" Pump Status: "+pumpStatus;
     }
 
     @NonNull
