@@ -2,6 +2,7 @@ package com.tanmay.example;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -56,11 +57,14 @@ public class MainActivity extends AppCompatActivity {
 
     TextView water_state;
 
+    ImageButton logoutButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        logoutButton = findViewById(R.id.logOutButton);
         water_level_progress_bar = findViewById(R.id.water_level_bar);
         energy_level_progress_bar = findViewById(R.id.energy_level_bar);
         // Initializing variables
@@ -90,6 +94,15 @@ public class MainActivity extends AppCompatActivity {
 
         updateStatus();
         refresh();
+
+        logoutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this,Login.class);
+                startActivity(i);
+                finish();
+            }
+        });
 
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
